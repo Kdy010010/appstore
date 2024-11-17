@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>App Store</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    form {
+      width: 50%;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    input[type="text"],
+    input[type="file"],
+    button {
+      display: block;
+      margin: 10px auto;
+      padding: 10px;
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    #searchInput {
+      width: 50%;
+      margin: 20px auto;
+      padding: 10px;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    li {
+      background-color: #fff;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>App Store</h1>
+
+  <!-- 파일 업로드 폼 -->
+  <form id="uploadForm" enctype="multipart/form-data">
+    <input type="text" name="name" placeholder="App Name" required>
+    <input type="file" name="app" required>
+    <button type="submit">Upload</button>
+  </form>
+
+  <!-- 앱 검색 -->
+  <input type="text" id="searchInput" placeholder="Search...">
+  <button onclick="searchApps()">Search</button>
+
+  <!-- 앱 목록 -->
+  <ul id="appList"></ul>
+
+  <script>
+    // 파일 업로드 폼을 서버로 전송하는 함수
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData();
+      formData.append('name', document.querySelector('input[name="name"]').value);
+      formData.append('app', document.querySelector('input[name="app"]').files[0]);
+      
+      try {
+        const response = await fetch('/upload', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await response.text();
+        alert(data);
+        fetchApps(); // 업로드 후 앱 목록 새로고침
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    });
+
+    // 서버로부터 앱 목록을 가져와 화면에 출력하는 함수
+    async function fetchApps() {
+      try {
+        const response = await fetch('/apps');
+        const apps = await response.json();
+        const appList = document.getElementById('appList');
+        appList.innerHTML = ''; // 목록 초기화
+
+        apps.forEach(app => {
+          const listItem = document.createElement('li');
+          listItem.textContent = app;
+
+          // 다운로드 링크 추가
+          const downloadLink = document.createElement('a');
+          downloadLink.textContent = '[Download]';
+          downloadLink.href = `/download/${app}`;
+          downloadLink.download = app;
+          listItem.appendChild(downloadLink);
+
+          appList.appendChild(listItem);
+        });
+      } catch (error) {
+        console.error('Error fetching apps:', error);
+      }
+    }
+
+    // 검색어를 서버로 전송하여 검색 결과를 가져와 화면에 출력하는 함수
+    async function searchApps() {
+      const query = document.getElementById('searchInput').value;
+      try {
+        const response = await fetch(`/search?query=${query}`);
+        const apps = await response.json();
+        const appList = document.getElementById('appList');
+        appList.innerHTML = ''; // 목록 초기화
+
+        apps.forEach(app => {
+          const listItem = document.createElement('li');
+          listItem.textContent = app;
+
+          // 다운로드 링크 추가
+          const downloadLink = document.createElement('a');
+          downloadLink.textContent = '[Download]';
+          downloadLink.href = `/download/${app}`;
+          downloadLink.download = app;
+          listItem.appendChild(downloadLink);
+
+          appList.appendChild(listItem);
+        });
+      } catch (error) {
+        console.error('Error searching apps:', error);
+      }
+    }
+
+    // 페이지 로드 시 앱 목록을 초기화
+    fetchApps();
+  </script>
+</body>
+</html>
